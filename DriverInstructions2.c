@@ -34,28 +34,84 @@ Step 3: Writing a Simple Driver Code
     The generated code includes driver entry and unload routines. You can add simple logging to these routines using DbgPrint:
 END COOMMENT */
 
+// Include necessary headers for KMDF and Driver Development
 #include <ntddk.h>
 #include <wdf.h>
 
-VOID UnloadDriver(_In_ WDFDRIVER Driver)
-{
-    DbgPrint("SimpleNetworkDriver: Driver Unloading\n");
-}
+// Forward declaration of the DriverUnload function
+VOID UnloadDriver(_In_ WDFDRIVER Driver);
 
+// Entry point for the driver
+// This function is called by the system when the driver is loaded
 NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath)
 {
-    WDF_DRIVER_CONFIG config;
-    NTSTATUS status;
+    // Variable declarations
+    WDF_DRIVER_CONFIG config; // Configuration structure for the driver
+    NTSTATUS status; // Variable to hold the status of operations
 
+    // Print a debug message indicating driver entry
+    // DbgPrint is used for debug output and can be viewed with tools like DebugView
     DbgPrint("SimpleNetworkDriver: Driver Entry\n");
 
+    // Initialize the driver configuration structure
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
+
+    // Specify that this is a non-PnP driver, which doesn't support Plug and Play operations
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
+    
+    // Assign the driver unload routine, which is called before the driver is unloaded
     config.EvtDriverUnload = UnloadDriver;
 
+    // Create a framework driver object to represent our driver
     status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, WDF_NO_HANDLE);
+
+    // Return the status of the driver creation
+    // A status of STATUS_SUCCESS indicates the driver was successfully loaded
     return status;
 }
+
+// DriverUnload function is called by the system before the driver is unloaded
+VOID UnloadDriver(_In_ WDFDRIVER Driver)
+{
+    // Print a debug message indicating the driver is being unloaded
+    DbgPrint("SimpleNetworkDriver: Driver Unloading\n");
+    
+    // Any cleanup operations required before the driver is unloaded should be performed here
+    // For this basic example, there's nothing specific to clean up
+}
+/*START COMMENT
+Key Components Explained:
+
+    Header Files: #include <ntddk.h> and #include <wdf.h> include necessary definitions and functions 
+    for kernel-mode driver development. ntddk.h is the Windows Driver Kit header for kernel-mode drivers, 
+    and wdf.h is specific to the Windows Driver Framework.
+
+    DriverEntry Function: This is the initial entry point of the driver, similar to main in user-mode applications. 
+    It's called by the system when the driver is loaded. The function is responsible for initializing the driver, 
+    setting up any global resources, and registering callback functions.
+
+    WDF_DRIVER_CONFIG Structure: Used to configure the driver. It specifies characteristics of the driver 
+    and event callback functions. In this example, it's initialized with WDF_DRIVER_CONFIG_INIT and 
+    configured as a non-PnP (non-Plug and Play) driver, indicating it doesn't automatically support 
+    device enumeration and management by the Windows PnP manager.
+
+    DbgPrint: Outputs debug messages that can be viewed with kernel debugging tools or utilities 
+    like DebugView from Sysinternals. It's useful for debugging and logging information during development.
+
+    WdfDriverCreate: Creates a framework driver object that represents the driver in the system. 
+    It associates the configuration structure, including the DriverUnload callback, with the driver object.
+
+    UnloadDriver Function: A callback that's called by the system before the driver is unloaded. 
+    It's intended for cleanup operations, releasing resources allocated by the driver to prevent resource leaks.
+
+Note on Driver Development:
+
+Driver development is complex and requires careful attention to detail. Errors in drivers can 
+lead to system instability or crashes. Always develop and test drivers in a controlled environment, 
+such as a virtual machine, and use proper debugging tools to monitor the driver's behavior. 
+Additionally, learning more about Windows internals and the Windows Driver Kit documentation 
+is essential for successful driver development.
+END COMMENT*/
 
 /*START COMMENT
 Step 4: Building Your Driver
